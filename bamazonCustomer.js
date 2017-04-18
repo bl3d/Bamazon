@@ -8,8 +8,6 @@ var connection;
 
 var bamCust = {
 
-	connection: null,
-
 	init: function(){
 		this.connectToDB();		
 	},
@@ -25,41 +23,76 @@ var bamCust = {
 
 		connection.connect(function(err) {
 		  if (err) throw err;
-		  console.log("connected as id " + connection.threadId);
-		  bamCust.promptUser(); 	  
+		  bamCust.displayProducts();		  	 
 		});	
-								
 	},
 
-	promptUser: function(){
+	displayProducts: function(){
+	  var query = "SELECT * FROM products";
+	  connection.query(query, function(err, res) {
+	    console.table(res);
+	    bamCust.getProduct(); 
+	  });		
+	},
 
+	getProduct: function(){
 		inquirer.prompt([{
-			type: "list",
-			message: "What would you like to do?",
-			choices: [
-				"1) Choice one",
-				"2) Choice two"
-			],
-			name: "action"
-		}]).then(function(user) {
-
-			//
-			var choiceIndex = parseInt(user.action.split(')'));
-
-			//
-			switch (choiceIndex){
-
-				case 1:
-					//					
-					break; 
-
-				case 2:
-					//					
-					break;  
-			};
-
+			type: "input",
+			message: "What product would you like to order (item_id)?",
+			name: "id"
+		}]).then(function(feedback) {
+		    var query = "SELECT * FROM products WHERE ?";
+		    connection.query(query, { item_id: feedback.id }, function(err, res) {
+		      if (!err) {
+		      	if (res.length > 0) {
+					bamCust.getQuantity(feedback.id);      		
+		      	} else {
+		      		console.log('Sorry, that is not an item_id in the system, please try again.');
+		      		bamCust.getProduct();
+		      	}
+		      } else {
+		      	console.log('Sorry, there was an error processing your request.');
+		      	process.exit();
+		      }
+		    });
 		});		
+	},
 
+	getQuantity: function(id){
+		inquirer.prompt([{
+			type: "input",
+			message: "How many units do you want to buy?",
+			name: "quantity"
+		}]).then(function(feedback) {
+		    var query = "SELECT stock_quantity FROM products WHERE ?";
+		    connection.query(query, { item_id: id }, function(err, res) {
+		    	var availStock = res[0].stock_quantity;
+		    	if (availStock <= 0) {
+		    		console.log('Sorry, this item is currently on backorder, please select another product.');
+		    		bamCust.getProduct();
+		    	} else if (availStock > feedback.quantity) {
+		      	    bamCust.orderProduct(id, feedback.quantity, availStock);
+		        } else {
+		      	    console.log('Insufficient quantity!');
+		      	    bamCust.getQuantity();
+		        }
+		    });				
+		});		
+	},
+
+	orderProduct: function(id, quantity, availStock){
+	    connection.query("UPDATE products set ? where ?", [{
+          stock_quantity: (availStock - quantity)
+        }, {
+          item_id: id
+        }], function(err) {
+          if (err) {
+          	  console.log(err);
+          } else {
+	          console.log("Congrats! You are now the proud owner of " + quantity + " items!");
+	          bamCust.displayProducts();          	
+          }
+        });
 	}
 
 }
