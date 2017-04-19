@@ -68,7 +68,7 @@ var bamCust = {
 		    connection.query(query, { item_id: id }, function(err, res) {
 		    	var availStock = res[0].stock_quantity;
 		    	if (availStock <= 0) {
-		    		console.log('Sorry, this item is currently on backorder, please select another product.');
+		    		console.log('Sorry, this item is currently on backorder. Please select another product.');
 		    		bamCust.getProduct();
 		    	} else if (availStock > feedback.quantity) {
 		      	    bamCust.orderProduct(id, feedback.quantity, availStock);
