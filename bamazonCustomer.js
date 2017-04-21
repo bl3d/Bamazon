@@ -74,11 +74,11 @@ var bamCust = {
 				if (availStock <= 0) {
 					console.log('Sorry, this item is currently on backorder. Please select another product.');
 					bamCust.getProduct();
-				} else if (availStock > feedback.quantity) {
+				} else if (availStock >= feedback.quantity) {
 					bamCust.orderProduct(id, feedback.quantity, availStock);
 				} else {
 					console.log('Insufficient quantity!');
-					bamCust.getQuantity();
+					bamCust.getQuantity(id);
 				}
 			});
 		});
